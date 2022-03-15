@@ -16,7 +16,6 @@ import jsonrpclib
 from jsonrpclib import Fault
 from jsonrpclib.jsonrpc import USE_UNIX_SOCKETS
 
-
 def get_version(request):
     # must be a dict
     if 'jsonrpc' in request.keys():
@@ -106,7 +105,6 @@ class SimpleJSONRPCDispatcher(xmlrpc.server.SimpleXMLRPCDispatcher):
             return None
         try:
             response = jsonrpclib.dumps(response,
-                                        version=get_version(request),
                                         methodresponse=True,
                                         rpcid=request['id']
                                         )
@@ -179,7 +177,10 @@ class SimpleJSONRPCRequestHandler(
             response = fault.response()
         if response is None:
             response = ''
-        self.send_header("Content-type", "application/json-rpc")
+        self.send_header("Content-type", "application/json")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "POST,OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "x-api-key,Content-Type")
         self.send_header("Content-length", str(len(response)))
         self.end_headers()
         if isinstance(response, bytes):
@@ -189,6 +190,12 @@ class SimpleJSONRPCRequestHandler(
         self.wfile.flush()
         self.connection.shutdown(1)
 
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "POST,OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "x-api-key,Content-Type")
+        self.end_headers()
 
 class SimpleJSONRPCUnixRequestHandler(SimpleJSONRPCRequestHandler):
 
